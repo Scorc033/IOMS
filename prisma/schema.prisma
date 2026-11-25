@@ -1,0 +1,88 @@
+// Prisma Schema for Inventory & Order Management System
+// Database: SQLite (portable to PostgreSQL/MySQL)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Supplier {
+  id            Int       @id @default(autoincrement())
+  name          String
+  contactPerson String    @map("contact_person")
+  email         String    @unique
+  phone         String
+  createdAt     DateTime  @default(now()) @map("created_at")
+  products      Product[]
+
+  @@map("suppliers")
+}
+
+model Product {
+  id            Int              @id @default(autoincrement())
+  sku           String           @unique
+  name          String
+  category      String
+  unitPrice     Float            @map("unit_price")
+  costPrice     Float            @map("cost_price")
+  stockQuantity Int              @default(0) @map("stock_quantity")
+  reorderLevel  Int              @default(10) @map("reorder_level")
+  supplierId    Int              @map("supplier_id")
+  createdAt     DateTime         @default(now()) @map("created_at")
+  supplier      Supplier         @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  orderItems    OrderItem[]
+  stockMovements StockMovement[]
+
+  @@index([supplierId])
+  @@index([category])
+  @@map("products")
+}
+
+model Order {
+  id                     Int         @id @default(autoincrement())
+  orderNumber            String      @unique @map("order_number")
+  orderType              String      @map("order_type") // INBOUND_PURCHASE | OUTBOUND_SALE
+  status                 String      @default("PENDING") // PENDING | COMPLETED | CANCELLED
+  customerOrSupplierName String      @map("customer_or_supplier_name")
+  totalAmount            Float       @default(0) @map("total_amount")
+  createdAt              DateTime    @default(now()) @map("created_at")
+  orderItems             OrderItem[]
+
+  @@index([orderType])
+  @@index([status])
+  @@map("orders")
+}
+
+model OrderItem {
+  id        Int     @id @default(autoincrement())
+  orderId   Int     @map("order_id")
+  productId Int     @map("product_id")
+  quantity  Int
+  unitPrice Float   @map("unit_price")
+  subtotal  Float
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([orderId])
+  @@index([productId])
+  @@map("order_items")
+}
+
+model StockMovement {
+  id           Int      @id @default(autoincrement())
+  productId    Int      @map("product_id")
+  changeAmount Int      @map("change_amount")
+  reason       String   // ORDER | RESTOCK | ADJUSTMENT
+  referenceId  String?  @map("reference_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+  product      Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([productId])
+  @@index([reason])
+  @@index([createdAt(sort: Desc)])
+  @@map("stock_movements")
+}

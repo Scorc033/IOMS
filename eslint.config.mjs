@@ -1,0 +1,22 @@
+import { FlatCompat } from "@eslint/eslintrc";
+import { defineConfig, globalIgnores } from "eslint/config";
+
+const compat = new FlatCompat({ baseDirectory: process.cwd() });
+
+const eslintConfig = defineConfig([
+  ...compat.extends("next/core-web-vitals", "next/typescript"),
+  {
+    files: ["**/*.cjs"],
+    rules: { "@typescript-eslint/no-require-imports": "off" },
+  },
+  // Override default ignores of eslint-config-next.
+  globalIgnores([
+    // Default ignores of eslint-config-next:
+    ".next/**",
+    "out/**",
+    "build/**",
+    "next-env.d.ts",
+  ]),
+]);
+
+export default eslintConfig;

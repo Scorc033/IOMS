@@ -1,0 +1,30 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId}/inventory/{documentId} {
+      function isOwner() {
+        return request.auth != null && request.auth.uid == userId;
+      }
+
+      allow get: if isOwner() && documentId == "state";
+      allow list: if false;
+      allow create, update: if isOwner()
+        && documentId == "state"
+        && request.resource.data.keys().hasOnly(["state", "updatedAt"])
+        && request.resource.data.keys().hasAll(["state", "updatedAt"])
+        && request.resource.data.state is map
+        && request.resource.data.state.keys().hasOnly([
+          "suppliers",
+          "products",
+          "orders",
+          "stockMovements"
+        ])
+        && request.resource.data.state.suppliers is list
+        && request.resource.data.state.products is list
+        && request.resource.data.state.orders is list
+        && request.resource.data.state.stockMovements is list
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if false;
+    }
+  }
+}

@@ -1,0 +1,9 @@
+env:
+  - variable: PRISMA_PROVIDER
+    value: postgresql
+    availability:
+      - BUILD
+  - variable: DATABASE_URL
+    secret: scorch
+    availability:
+      - RUNTIME
